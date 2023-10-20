@@ -55,7 +55,7 @@ def getModelName(sheet: Worksheet, row):
             if x in cellVal1.lower():
                 modelName = cellVal1
                 continue
-    if modelName is None and cellVal2:
+    if modelName is None and type(cellVal2) is str:
         for x in cellVal2.lower():
             if x in cellVal2.lower():
                 modelName = cellVal2
