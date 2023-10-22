@@ -1,81 +1,122 @@
-from tkinter import *
-# import serial_module as Serial
+# from serial_module import *
+from customtkinter import *
 
-color = "white"
+def submit_serial(input, frameBuffer: CTkFrame, modelBuffer: CTkLabel, newModelFrame: CTkFrame, existingModelFrame: CTkFrame):
+    # data = find_serial(input)
+    # data = {
+    #     'modelName': "CANEO B 45"
+    # }
+    new = False
+    frameBuffer.pack()
 
-window = Tk()
+    if new:
+        newModel_frame.pack()
+    else:
+        existingModel_frame.pack() 
+        modelBuffer.configure(text=input)
+    
+#window
+window = CTk()
 window.title("Injector")
-window.geometry("800x800")
-window.configure(background='lightgreen')
-for i in range(0, 9):
-    window.columnconfigure(index=i, weight=1)
-    window.rowconfigure(index=i, weight=1)
+window.geometry("600x600")
+globalFont = CTkFont("arial", 15)
 
-existing_model = None
+#title
+title = CTkLabel(window,
+    text="הכנסת נתונים",
+    font=CTkFont("arial", 20)
+)
+title.pack()
 
-title_label = Label(
-    text = "הכנסת נתונים",
-    background = color,
-    # font=("Arial Bold", 30)
-).grid(row=0, column=3)
+#serial
+serial_frame = CTkFrame(window)
+serial_frame.pack()
 
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=9)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=8)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=7)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=6)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=5)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=4)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=2)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=1)
-serial_entry_label = Label(
-    text = "מספר סריאלי",
-    background = color,
-    # font=("Arial", 12)
-).grid(row=1, column=0)
+serial_label = CTkLabel(serial_frame,
+    text=":מס' סריאלי",
+    font=globalFont
+)
+serial_label.grid(row=0, column=2)
 
-serial_entry = Entry(
-    fg="black",
-    bg="white",
-).grid(row=1, column=3)
-
-existing_model_label = Label(
-    text = existing_model,
-    background = color,
-    # font=("Arial", 20)
-).grid(row=2, column=3)
+serial_input = CTkEntry(serial_frame)
+serial_input.grid(row=0, column=1, padx=10)
 
 
+
+serial_sumbit = CTkButton(serial_frame,
+    text = "חפש",
+    width = 10,
+    command = lambda: submit_serial(serial_input.get(),
+                                     form_frame,
+                                       existingModel_Name,
+                                         newModel_frame,
+                                           existingModel_frame)
+)
+serial_sumbit.grid(row=0, column=0)
+
+
+#   form
+#name
+form_frame = CTkFrame(window)
+
+name_label = CTkLabel(form_frame,
+    text="  :שם",
+    font=globalFont
+)
+name_label.grid(row=0, column=1)
+
+name_input = CTkEntry(form_frame)
+name_input.grid(row=0, column=0, padx=10)
+
+#id
+id_label = CTkLabel(form_frame,
+    text=":מס' זהות",
+    font=globalFont
+)
+id_label.grid(row=1, column=1)
+
+id_input = CTkEntry(form_frame)
+id_input.grid(row=1, column=0, padx=10)
+
+#date
+date_label = CTkLabel(form_frame,
+    text=":מועד אספקה",
+    font=globalFont
+)
+date_label.grid(row=3, column=1)
+
+date_input = CTkEntry(form_frame)
+date_input.grid(row=3, column=0, padx=10)
+
+#   model frames
+#new model
+newModel_frame = CTkFrame(window)
+newModel_label = CTkLabel(newModel_frame,
+    text=":דגם",
+    font=globalFont
+)
+newModel_label.grid(row=0, column=1)
+
+newModel_input = CTkEntry(newModel_frame)
+newModel_input.grid(row=0, column=0, padx=10)
+
+#existing model
+existingModel_frame = CTkFrame(window)
+existingModel_label = CTkLabel(existingModel_frame,
+    text=":דגם",
+    font=globalFont
+)
+existingModel_label.grid(row=0, column=1)
+
+existingModel_Name = CTkLabel(existingModel_frame)
+existingModel_Name.grid(row=0, column=0, padx=10)
+
+serial_input.bind('<Enter>', 
+    lambda: submit_serial(serial_input.get(),
+                                     form_frame,
+                                       existingModel_Name,
+                                         newModel_frame,
+                                           existingModel_frame)
+)
 
 window.mainloop()
