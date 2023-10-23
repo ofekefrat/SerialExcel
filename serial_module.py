@@ -1,9 +1,13 @@
-import pathlib
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
+#TODO everything in getcolumn
+#TODO date formatting
+#TODO add the option to set items as "returned"
+    # TEST: make sure there's no additional cells after the first empty cell found!
+    # TEST: serial number validation (insufficient digits, incorrect format...)
+
 def getPath(serial):
-    #only if 2400-03? 
     targetWorkbook = serial[0:-3] + "000.xlsx"
     path = "C:\\Users\\Rachel\\Desktop\\"
     fullPath = path + targetWorkbook
@@ -11,17 +15,22 @@ def getPath(serial):
 
 def getWorkbook(serial) -> Workbook:
     path = getPath(serial)
-    wb = load_workbook(path)
-    return wb
-
+    try:
+        wb = load_workbook(path)
+        return wb
+    except FileNotFoundError as e:
+        return e
+        
 def getSheet(serial: str, wb: Workbook) -> Worksheet:
     targetSheet = serial[0:-2] + "00"
-    sheet = wb[targetSheet]   
+    try:
+        sheet = wb[targetSheet]   
+    except KeyError as e:
+        return e
     return sheet
 
 
 def getRow(serial, sheet: Worksheet):
-
     cellVal = sheet.cell(row=1, column=1).value
     currentRow=0
     while currentRow < 100 and cellVal != serial: 
@@ -36,18 +45,19 @@ def getRow(serial, sheet: Worksheet):
 
 
 def isNew(sheet: Worksheet, row):
-    for i in range(2, 5):
-        cellVal = sheet.cell(row=row, column=i).value
-        if cellVal is not None:
-            return False
-    return True
+    return not not_last_cell(sheet, row, 1)
+    # for i in range(2, 5):
+    #     cellVal = sheet.cell(row=row, column=i).value
+    #     if cellVal is not None:
+    #         return False
+    # return True
 
 
 def getModelName(sheet: Worksheet, row):
-    models = ["caneo", "domiflex", "exigo", "emineo", "cirrus", "marcus", "f3", "m1", "k300", "pt", "מדרגון", "eloflex"]
+    models = ["caneo", "domiflex", "exigo", "emineo", "cirrus", "marcus", "f3", "m1", "k300", "pt", "מדרגון", "eloflex", "adiflex"]
 
     modelName = None
-    currentColumn=4
+    currentColumn=5
     cellVal1 = sheet.cell(row=row, column=currentColumn-1).value
     cellVal2 = sheet.cell(row=row, column=currentColumn).value
 
@@ -67,50 +77,75 @@ def getModelName(sheet: Worksheet, row):
     return modelName
     
 def getColumn(sheet: Worksheet, row):
+    # put a flag in the end of the row to signify editing in progress
+    # check if there's a flag and throw error if so
+    
+    column = find_next_empty_cell(sheet, row)
+    result = not_last_cell(sheet, row, column)
+    while result is not False:
+        column = find_next_empty_cell(sheet, row)
+        result = not_last_cell(sheet, row, column)
+        
+    cellVal = sheet.cell(row=row, column=column-1).value
+    if cellVal != "הוחזר":
+        return -1
+
+    return column
+    
+
+def find_next_empty_cell(sheet: Worksheet, row):
     currentColumn=2
     cellVal = sheet.cell(row=row, column=currentColumn).value
     while cellVal is not None:
         currentColumn+=1
         cellVal = sheet.cell(row=row, column=currentColumn).value
-    
-    cellVal = sheet.cell(row=row, column=currentColumn-1).value
-    if cellVal != "הוחזר":
-        print("error: device not returned")
-        return -1
-
     return currentColumn
+
+def not_last_cell(sheet: Worksheet, row, currentColumn: int):
+    for i in range(1, 10):
+        cellVal = sheet.cell(row=row, column=(currentColumn+i)).value
+        if cellVal is not None:
+            return currentColumn+i
+        else:
+            return False
     
 
 def find_serial(serial) -> dict:
-    # serial = '2400-03-001115'
+    sheet=None
+    row=None
+    column=None
+    modelName=None
+    new=None
+
     wb = getWorkbook(serial)
-    sheet = getSheet(serial, wb)
-    row = getRow(serial, sheet)
-    if isNew(sheet, row):
-        modelName = "None"
-        column = 2
-    else:
-        modelName = getModelName(sheet, row)
-        column = getColumn(sheet, row)
+    if not isinstance(wb, FileNotFoundError):
+        sheet = getSheet(serial, wb)
+        if not isinstance(sheet, KeyError):
+            row = getRow(serial, sheet)
+            if isNew(sheet, row):
+                new = True
+                modelName = "None"
+                column = 2
+            else:
+                new = False
+                modelName = getModelName(sheet, row)
+                column = getColumn(sheet, row)
 
     data = {
         "workbook" : wb,
         "worksheet": sheet,
         "row": row,
         "column": column,
-        "modelName": modelName
+        "modelName": modelName,
+        "new": new,
+        "serial": serial
     }
     return data
-    # print(f"model name: {modelName}\nrow: {row}\ncolumn: {column}")
 
-def update_info(serial, wb: Workbook, sheet: Worksheet, row, column, name, id, date):
-    info = [name, id, date]
+def update_info(serial, wb: Workbook, sheet: Worksheet, row, column, name, id, date, model=None):
+    info = [name, id, model, date]
     for x in info:
-        sheet.cell(row, column).value = x
-        column+=1
+        if x != "":
+            sheet.cell(row, column).value = x
+            column+=1
     wb.save(getPath(serial))
-    
-serial = "2400-03-001115"
-data = find_serial(serial)
-print(data['modelName'])
-update_info(serial, data['workbook'], data['worksheet'], data['row'], data['column'], "נחום תקום", "123123123", "27/12/23")
