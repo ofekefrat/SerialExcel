@@ -1,58 +1,53 @@
-import datetime
 from serial_module import *
 from tkcalendar import DateEntry
 from customtkinter import *
 import customtkinter as ctk
 
-wb=None
-sheet=None
-row=None
-column=None
-serial=None
+item = None
 
-def submit_serial(input, frameBuffer: CTkFrame, modelBuffer: CTkLabel, newModelFrame: CTkFrame, existingModelFrame: CTkFrame):
-    global wb, sheet, row, column, serial
-    globalData = [wb, sheet, row, column, serial]
+def submit_serial(input,
+                  frameBuffer: CTkFrame,
+                  modelBuffer: CTkLabel,
+                  newModelFrame: CTkFrame,
+                  existingModelFrame: CTkFrame,
+                #   prev_name: CTkLabel,
+                #   prev_id: CTkLabel
+                 ):
+    global item
+    item = None
 
     msg_label.grid_forget()
     existingModel_frame.grid_forget()
     newModel_frame.grid_forget()
 
-    data = find_serial(input)
+    tempItem = find_serial(input)
 
-    if isinstance(data['workbook'], FileNotFoundError) or isinstance(data['worksheet'], KeyError):
+    if isinstance(tempItem.wb, FileNotFoundError) or isinstance(tempItem.sheet, KeyError):
         show_msg("מספר סריאלי לא קיים", error=True)
         return
     
-    if data['column'] == -1:
+    if tempItem.column == -1:
         show_msg("המוצר לא הוחזר", error=True)
         return
     
-    wb = data['workbook']
-    sheet = data['worksheet']
-    row = data['row']
-    column = data['column']
-    serial = data['serial']
-
     frameBuffer.grid(row=2, column=1, pady=5)
 
-    if data['new']:
+    if tempItem.new:
         newModel_frame.grid(row=3, column=1, pady=5)
     else:
         existingModel_frame.grid(row=3, column=1, pady=5) 
-        modelBuffer.configure(text=data['modelName'])
+        modelBuffer.configure(text=tempItem.modelName)
 
     info_submit.grid(row=4, column=1, pady=5)
-
-    for x in globalData:
-        x = None
+    item = tempItem
 
 
 def submit_info(name, id, date, modelEntry: CTkEntry):
+    global item
     model = modelEntry.get()
     date = date.strftime("%d/%m/%y")
     try:
-        update_info(serial, wb, sheet, row, column, name, id, date, model)
+        update_info(item, name, id, date, model)
         show_msg("הקובץ עודכן בהצלחה", error=False)
     except PermissionError:
         show_msg("הקובץ המתבקש נמצא בשימוש, אנא דאג לסגירתו", error=True)
@@ -106,10 +101,10 @@ serial_sumbit = CTkButton(main_frame,
     font = globalFont,
     bg_color = background,
     command = lambda: submit_serial(serial_input.get(),
-                                     form_frame,
-                                       existingModel_Name,
-                                         newModel_frame,
-                                           existingModel_frame)
+                                    form_frame,
+                                    existingModel_Name,
+                                    newModel_frame,
+                                    existingModel_frame)
 )
 serial_sumbit.grid(row=1, column=0, pady=5)
 
@@ -123,10 +118,21 @@ name_label = CTkLabel(form_frame,
     font=globalFont,
     bg_color=background
 )
-name_label.grid(row=0, column=1, pady=5)
+name_label.grid(row=0, column=3, pady=5)
 
 name_input = CTkEntry(form_frame, bg_color=background, justify = "right")
-name_input.grid(row=0, column=0, padx=10, pady=5)
+name_input.grid(row=0, column=2, padx=10, pady=5)
+
+#previous name
+prev_name_label = CTkLabel(form_frame,
+    text=":זכאי קודם",
+    font=globalFont,
+    bg_color=background
+)
+prev_name_label.grid(row=0, column=1, pady=5, padx=(0, 20))
+
+prev_name = CTkLabel(form_frame, bg_color=background, justify = "right")
+prev_name.grid(row=0, column=0, padx=10, pady=5)
 
 #id
 id_label = CTkLabel(form_frame,
@@ -134,10 +140,21 @@ id_label = CTkLabel(form_frame,
     font=globalFont, 
     bg_color=background
 )
-id_label.grid(row=1, column=1, pady=5)
+id_label.grid(row=1, column=3, pady=5)
 
 id_input = CTkEntry(form_frame, bg_color=background)
-id_input.grid(row=1, column=0, padx=10, pady=5)
+id_input.grid(row=1, column=2, padx=10, pady=5)
+
+#previous id
+prev_id_label = CTkLabel(form_frame,
+    text=":מס' זהות קודם",
+    font=globalFont, 
+    bg_color=background
+)
+prev_id_label.grid(row=1, column=1, pady=5, padx=(0, 20))
+
+prev_id = CTkLabel(form_frame, bg_color=background)
+prev_id.grid(row=1, column=0, padx=10, pady=5)
 
 #date
 date_label = CTkLabel(form_frame,
@@ -145,11 +162,11 @@ date_label = CTkLabel(form_frame,
     font=globalFont,
     bg_color=background
 )
-date_label.grid(row=3, column=1, pady=5)
+date_label.grid(row=3, column=3, pady=5)
 
 # date_entry = CTkEntry(form_frame, bg_color=background)
 date_input = DateEntry(form_frame, )
-date_input.grid(row=3, column=0, padx=10, pady=5)
+date_input.grid(row=3, column=2, padx=10, pady=5)
 
 #   model frames
 #new model
