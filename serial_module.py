@@ -16,6 +16,20 @@ class Item:
         self.column = None
         self.modelName = None
         self.new = None
+
+        self.getWorkbook()
+        if not isinstance(self.wb, FileNotFoundError):
+            self.getSheet()
+            if not isinstance(self.sheet, KeyError):
+                self.getRow()
+                if self.isNew():
+                    self.new = True
+                    self.modelName = "None"
+                    self.column = 2
+                else:
+                    self.new = False
+                    self.getModelName()
+                    self.getColumn()
     
     def getPath(self):
         targetWorkbook = self.serial[0:-3] + "000.xlsx"
@@ -53,7 +67,7 @@ class Item:
 
 
     def isNew(self):
-        self.new = not self.not_last_cell(self.sheet, self.row, 1)
+        self.new = not self.not_last_cell(1)
 
     def getModelName(self):
         models = ["caneo", "domiflex", "exigo", "emineo", "cirrus", "marcus", "f3", "m1", "k300", "pt", "מדרגון", "eloflex", "adiflex"]
@@ -112,29 +126,28 @@ class Item:
                 return False
         
 
-def find_serial(serial):
-    item = Item(serial)
+# def find_serial(serial):
+#     item = Item(serial)
 
-    item.wb = item.getWorkbook()
-    if not isinstance(item.wb, FileNotFoundError):
-        item.sheet = item.getSheet()
-        if not isinstance(item.sheet, KeyError):
-            item.row = item.getRow()
-            if item.isNew():
-                item.new = True
-                item.modelName = "None"
-                item.column = 2
-            else:
-                item.new = False
-                item.modelName = item.getModelName()
-                item.column = item.getColumn(item.sheet, item.row)
+#     item.getWorkbook()
+#     if not isinstance(item.wb, FileNotFoundError):
+#         item.getSheet()
+#         if not isinstance(item.sheet, KeyError):
+#             item.getRow()
+#             if item.isNew():
+#                 item.new = True
+#                 item.modelName = "None"
+#                 item.column = 2
+#             else:
+#                 item.new = False
+#                 item.getModelName()
+#                 item.getColumn()
+#     return item
 
-    return item
-
-def update_info(item: Item, name, id, date, model=None):
-    info = [name, id, model, date]
-    for x in info:
-        if x != "":
-            item.sheet.cell(item.row, item.column).value = x
-            item.column+=1
-    item.wb.save(item.getPath(item.serial))
+    def update_info(self, name, id, date, model=None):
+        info = [name, id, model, date]
+        for x in info:
+            if x != "":
+                self.sheet.cell(self.row, self.column).value = x
+                self.column+=1
+        self.wb.save(self.getPath())

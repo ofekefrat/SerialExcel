@@ -20,7 +20,7 @@ def submit_serial(input,
     existingModel_frame.grid_forget()
     newModel_frame.grid_forget()
 
-    tempItem = find_serial(input)
+    tempItem = Item(input)
 
     if isinstance(tempItem.wb, FileNotFoundError) or isinstance(tempItem.sheet, KeyError):
         show_msg("מספר סריאלי לא קיים", error=True)
@@ -47,7 +47,7 @@ def submit_info(name, id, date, modelEntry: CTkEntry):
     model = modelEntry.get()
     date = date.strftime("%d/%m/%y")
     try:
-        update_info(item, name, id, date, model)
+        item.update_info(name, id, date, model)
         show_msg("הקובץ עודכן בהצלחה", error=False)
     except PermissionError:
         show_msg("הקובץ המתבקש נמצא בשימוש, אנא דאג לסגירתו", error=True)
