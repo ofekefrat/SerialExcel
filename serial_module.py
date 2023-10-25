@@ -1,3 +1,4 @@
+import os.path
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -16,35 +17,40 @@ class Item:
         self.column = None
         self.modelName = None
         self.new = None
+        self.prevName = None
+        self.prevId = None
 
-        self.getWorkbook()
+        self.findWorkbook()
         if not isinstance(self.wb, FileNotFoundError):
-            self.getSheet()
+            self.findSheet()
             if not isinstance(self.sheet, KeyError):
-                self.getRow()
-                if self.isNew():
-                    self.new = True
-                    self.modelName = "None"
+                self.findRow()
+                self.findIsNew()
+                if self.new:
+                    self.modelName = None
                     self.column = 2
                 else:
-                    self.new = False
-                    self.getModelName()
-                    self.getColumn()
+                    self.findModelName()
+                    self.findColumn()
+                    self.findPrevInfo()
     
-    def getPath(self):
+
+    def createPath(self):
         targetWorkbook = self.serial[0:-3] + "000.xlsx"
-        path = "C:\\Users\\Rachel\\Desktop\\code\\lets\\SerialExcel\\"
+        # path = "C:\\Users\\Rachel\\Desktop\\code\\lets\\SerialExcel\\"
+        path = "C:\\Users\\ofeke\\vscode projects\\SerialExcel\\"
         self.path = path + targetWorkbook
         
 
-    def getWorkbook(self):
-        self.getPath()
+    def findWorkbook(self):
+        self.createPath()
         try:
             self.wb = load_workbook(self.path)
         except FileNotFoundError as e:
             self.wb = e
             
-    def getSheet(self):
+
+    def findSheet(self):
         targetSheet = self.serial[0:-2] + "00"
         try:
             self.sheet = self.wb[targetSheet]   
@@ -52,7 +58,7 @@ class Item:
             self.sheet = e
 
 
-    def getRow(self):
+    def findRow(self):
         cellVal = self.sheet.cell(row=1, column=1).value
         currentRow=0
         while currentRow < 100 and cellVal != self.serial: 
@@ -66,10 +72,28 @@ class Item:
         self.row = currentRow
 
 
-    def isNew(self):
+    def findIsNew (self):
         self.new = not self.not_last_cell(1)
 
-    def getModelName(self):
+
+    def findColumn(self):
+        # put a flag in the end of the row to signify editing in progress
+        # check if there's a flag and throw error if so
+        
+        column = self.find_next_empty_cell()
+        result = self.not_last_cell(column)
+        while result is not False:
+            column = self.find_next_empty_cell()
+            result = self.not_last_cell(column)
+            
+        cellVal = self.sheet.cell(row=self.row, column=column-1).value
+        if cellVal != "הוחזר":
+            self.column = -1
+
+        self.column = column
+
+
+    def findModelName(self):
         models = ["caneo", "domiflex", "exigo", "emineo", "cirrus", "marcus", "f3", "m1", "k300", "pt", "מדרגון", "eloflex", "adiflex"]
 
         modelName = None
@@ -92,22 +116,21 @@ class Item:
 
         self.modelName = modelName
         
-    def getColumn(self):
-        # put a flag in the end of the row to signify editing in progress
-        # check if there's a flag and throw error if so
-        
-        column = self.find_next_empty_cell()
-        result = self.not_last_cell(column)
-        while result is not False:
-            column = self.find_next_empty_cell()
-            result = self.not_last_cell(column)
-            
-        cellVal = self.sheet.cell(row=self.row, column=column-1).value
-        if cellVal != "הוחזר":
-            self.column = -1
 
-        self.column = column
+    def findPrevInfo(self):
+        currentColumn = self.column
+        for i in range(3, 5): # -1 is "returned", -2 is date
+            value = self.sheet.cell(self.row, currentColumn-i).value
+            if type(value) is int or value.isnumeric():
+                self.prevId = value
+                continue
         
+        for j in range(0, 2):
+            value = self.sheet.cell(self.row, currentColumn-i-j).value
+            if type(value) is str and value.isalpha(): # and " " in value:
+                self.prevName = value
+                continue
+
 
     def find_next_empty_cell(self):
         currentColumn=2
@@ -117,6 +140,7 @@ class Item:
             cellVal = self.sheet.cell(row=self.row, column=currentColumn).value
         return currentColumn
 
+
     def not_last_cell(self, column):
         for i in range(1, 10):
             cellVal = self.sheet.cell(row=self.row, column=(column+i)).value
@@ -124,6 +148,8 @@ class Item:
                 return column+i
             else:
                 return False
+
+
         
 
 # def find_serial(serial):
@@ -144,10 +170,11 @@ class Item:
 #                 item.getColumn()
 #     return item
 
+
     def update_info(self, name, id, date, model=None):
         info = [name, id, model, date]
         for x in info:
             if x != "":
                 self.sheet.cell(self.row, self.column).value = x
                 self.column+=1
-        self.wb.save(self.getPath())
+        self.wb.save(self.createPath())

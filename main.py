@@ -6,13 +6,13 @@ import customtkinter as ctk
 item = None
 
 def submit_serial(input,
-                  frameBuffer: CTkFrame,
-                  modelBuffer: CTkLabel,
-                  newModelFrame: CTkFrame,
-                  existingModelFrame: CTkFrame,
+                #   frameBuffer: CTkFrame,
+                #   modelBuffer: CTkLabel,
+                #   newModelFrame: CTkFrame,
+                #   existingModelFrame: CTkFrame,
                 #   prev_name: CTkLabel,
                 #   prev_id: CTkLabel
-                 ):
+                ):
     global item
     item = None
 
@@ -30,13 +30,21 @@ def submit_serial(input,
         show_msg("המוצר לא הוחזר", error=True)
         return
     
-    frameBuffer.grid(row=2, column=1, pady=5)
+    form_frame.grid(row=2, column=1, pady=5)
 
     if tempItem.new:
         newModel_frame.grid(row=3, column=1, pady=5)
     else:
         existingModel_frame.grid(row=3, column=1, pady=5) 
-        modelBuffer.configure(text=tempItem.modelName)
+        existingModel_Name.configure(text=tempItem.modelName)
+
+        prev_name_label.grid(row=0, column=1, pady=5, padx=(0, 20))
+        prev_name.grid(row=0, column=0, padx=10, pady=5)
+        prev_name.configure(text=tempItem.prevName)
+
+        prev_id_label.grid(row=1, column=1, pady=5, padx=(0, 20))
+        prev_id.grid(row=1, column=0, padx=10, pady=5)
+        prev_id.configure(text=tempItem.prevId)
 
     info_submit.grid(row=4, column=1, pady=5)
     item = tempItem
@@ -93,18 +101,18 @@ serial_label.grid(row=0, column=2)
 serial_input = CTkEntry(serial_frame, bg_color=background)
 serial_input.grid(row=0, column=1, padx=10)
 
-
-
 serial_sumbit = CTkButton(main_frame,
     text = "חפש",
     width = 10,
     font = globalFont,
     bg_color = background,
-    command = lambda: submit_serial(serial_input.get(),
-                                    form_frame,
-                                    existingModel_Name,
-                                    newModel_frame,
-                                    existingModel_frame)
+    command = lambda: submit_serial(serial_input.get())
+                                    # form_frame,
+                                    # existingModel_Name,
+                                    # newModel_frame,
+                                    # existingModel_frame,
+                                    # prev_name,
+                                    # prev_id)
 )
 serial_sumbit.grid(row=1, column=0, pady=5)
 
@@ -123,16 +131,14 @@ name_label.grid(row=0, column=3, pady=5)
 name_input = CTkEntry(form_frame, bg_color=background, justify = "right")
 name_input.grid(row=0, column=2, padx=10, pady=5)
 
-#previous name
+#previous name --------------------------
 prev_name_label = CTkLabel(form_frame,
     text=":זכאי קודם",
     font=globalFont,
     bg_color=background
 )
-prev_name_label.grid(row=0, column=1, pady=5, padx=(0, 20))
 
 prev_name = CTkLabel(form_frame, bg_color=background, justify = "right")
-prev_name.grid(row=0, column=0, padx=10, pady=5)
 
 #id
 id_label = CTkLabel(form_frame,
@@ -151,10 +157,8 @@ prev_id_label = CTkLabel(form_frame,
     font=globalFont, 
     bg_color=background
 )
-prev_id_label.grid(row=1, column=1, pady=5, padx=(0, 20))
 
 prev_id = CTkLabel(form_frame, bg_color=background)
-prev_id.grid(row=1, column=0, padx=10, pady=5)
 
 #date
 date_label = CTkLabel(form_frame,
