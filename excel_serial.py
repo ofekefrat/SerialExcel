@@ -11,7 +11,7 @@ FIRST_POSSIBLE_EMPTY_COLUMN = 2
 class Item:
     def __init__(self, serial: str):
         self.serial = serial.strip()
-        self.path = None
+        self._path = None
         self.wb = None
         self.sheet = None
         self.row = None
@@ -22,40 +22,40 @@ class Item:
         self.prevName = None
         self.returned = None
 
-        self.find_workbook()
-        if not isinstance(self.wb, FileNotFoundError):
-            self.find_sheet()
+        self._find_workbook()
+        if not isinstance(self._wb, FileNotFoundError):
+            self._find_sheet()
             if not isinstance(self.sheet, KeyError):
-                self.find_row()
-                self.assert_is_new()
+                self._find_row()
+                self._assert_is_new()
                 if self.new:
                     self.modelName = None
                     self.column = FIRST_POSSIBLE_EMPTY_COLUMN
                 else:
-                    self.fetch_device_info()
-                    self.find_column()
-                    self.fetch_prev_name()
-                    self.assert_is_returned()
+                    self._fetch_device_info()
+                    self._find_column()
+                    self._fetch_prev_name()
+                    self._assert_is_returned()
 
-    def create_path(self):
+    def _create_path(self):
         path = "serial "
-        self.path = path + self.serial[0:-3] + "000.xlsx"
+        self._path = path + self.serial[0:-3] + "000.xlsx"
 
-    def find_workbook(self):
-        self.create_path()
+    def _find_workbook(self):
+        self._create_path()
         try:
-            self.wb = load_workbook(self.path)
+            self._wb = load_workbook(self._path)
         except FileNotFoundError as e:
-            self.wb = e
+            self._wb = e
 
-    def find_sheet(self):
+    def _find_sheet(self):
         targetSheet = self.serial[0:-2] + "00"
         try:
-            self.sheet = self.wb[targetSheet]
+            self.sheet = self._wb[targetSheet]
         except KeyError as e:
             self.sheet = e
 
-    def find_row(self):
+    def _find_row(self):
         cellVal = self.sheet.cell(row=1, column=1).value
         currentRow = 0
         while currentRow < 100 and cellVal != self.serial:
@@ -67,10 +67,10 @@ class Item:
         else:
             self.row = currentRow
 
-    def assert_is_new(self):
+    def _assert_is_new(self):
         self.new = not self._not_last_cell(1)
 
-    def find_column(self):
+    def _find_column(self):
         column = self._find_first_empty_cell(FIRST_POSSIBLE_EMPTY_COLUMN)
         result = self._not_last_cell(column)
         while result is not False:
@@ -98,11 +98,11 @@ class Item:
         else:
             return False
 
-    def assert_is_returned(self):
+    def _assert_is_returned(self):
         cellVal = self.sheet.cell(row=self.row, column=self.column - 1).value
         self.returned = cellVal == "הוחזר".strip()
 
-    def fetch_device_info(self):
+    def _fetch_device_info(self):
         models = [
             "caneo",
             "domiflex",
@@ -131,7 +131,7 @@ class Item:
                     deviceBirthday = cellVal2
                     continue
         if modelName is None and type(cellVal2) is str:
-            for x in cellVal2.lower():
+            for x in models:
                 if x in cellVal2.lower():
                     modelName = cellVal2
                     deviceBirthday = self.sheet.cell(
@@ -143,11 +143,14 @@ class Item:
         else:
             self.modelName = modelName.strip()
 
-        self.deviceBirthday = deviceBirthday
-        if isinstance(deviceBirthday, datetime):
+        try:
+            self.deviceBirthday = deviceBirthday
+        except UnboundLocalError:
+            self.deviceBirthday = "לא נמצא"
+        if isinstance(self.deviceBirthday, datetime):
             self.deviceBirthday = deviceBirthday.strftime("%d/%m/%y")
 
-    def fetch_prev_name(self):
+    def _fetch_prev_name(self):
         currentColumn = self.column
         for i in range(4, 8):
             if currentColumn - i >= 1:
@@ -155,35 +158,35 @@ class Item:
                 if type(cellVal) is str and (
                     cellVal == "הוחזר".strip() or cellVal == self.serial.strip()
                 ):
-                    self.prevName = self.sheet.cell(
-                        self.row, currentColumn - i + 1
-                    ).value.strip()
-                    return
+                    try:
+                        self.prevName = self.sheet.cell(
+                            self.row, currentColumn - i + 1
+                        ).value.strip()
+                    except AttributeError as e:
+                        self.prevName = e
+                        return
             else:
                 continue
         self.prevName = "לא נמצא"
 
-    def check_unexpected_entry(self):
+    def _check_unexpected_entry(self):
         value = self.sheet.cell(self.row, self.column).value
         return value is not None
 
-    def set_returned(self):
-        if self.check_unexpected_entry():
+    def _set_returned(self):
+        if self._check_unexpected_entry():
             return False
         self.sheet.cell(self.row, self.column).value = "הוחזר"
-        self.wb.save(self.path)
+        self._wb.save(self._path)
         return True
 
-    def is_duplicate(self, name):
-        return name.strip() == self.prevName.strip()
-
-    def update_info(self, name, id, date, model=None):
-        if self.check_unexpected_entry():
+    def _update_info(self, name, id, date, model=None):
+        if self._check_unexpected_entry():
             return False
         info = [name, id, model, date]
         for x in info:
             if x != "":
                 self.sheet.cell(self.row, self.column).value = x
                 self.column += 1
-        self.wb.save(self.path)
+        self._wb.save(self._path)
         return True
